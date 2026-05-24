@@ -26,6 +26,7 @@
 | Package | Version | Description |
 |---------|---------|-------------|
 | [**plugin-sdk**](./packages/plugin-sdk) | [![npm](https://img.shields.io/npm/v/@sonata-sdk/plugin-sdk)](https://npmjs.com/package/@sonata-sdk/plugin-sdk) | Types, `register()` helper, and base class for creating Sonata plugins |
+| [**voice**](./packages/voice) | [![npm](https://img.shields.io/npm/v/@sonata-sdk/voice)](https://npmjs.com/package/@sonata-sdk/voice) | Discord voice connection — WebSocket gateway, UDP, RTP, encryption, DAVE/MLS |
 
 *More packages coming soon — lyrics, webhooks, integrations, and more.*
 

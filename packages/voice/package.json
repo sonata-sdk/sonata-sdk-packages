@@ -1,0 +1,38 @@
+{
+  "name": "@sonata-sdk/voice",
+  "version": "0.1.0",
+  "description": "Discord voice connection library — WebSocket gateway, UDP, RTP, encryption, DAVE/MLS",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "opusscript": "^0.1.1",
+    "tweetnacl": "^1.0.3"
+  },
+  "optionalDependencies": {
+    "@snazzah/davey": "^0.1.11",
+    "libsodium-wrappers": "^0.7.15"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.4.0",
+    "ws": "^8.21.0"
+  }
+}
