@@ -1,6 +1,6 @@
 # @sonata-sdk/plugin-sdk
 
-SDK for creating Sonata plugins.
+SDK for creating plugins for [Sonata](https://github.com/sonata-sdk/sonata) — the Lavalink-compatible audio server.
 
 ## Install
 
@@ -56,6 +56,11 @@ export default new (class extends SonataPlugin {
 })()
 ```
 
+## Related
+
+- [Sonata](https://github.com/sonata-sdk/sonata) — Lavalink-compatible audio server
+- [sonata-sdk-packages](https://github.com/sonata-sdk/sonata-sdk-packages) — Monorepo for all Sonata SDK packages
+
 ## License
 
-MIT
+[MIT](./LICENSE)
