@@ -34,6 +34,18 @@ npm install @snazzah/davey libsodium-wrappers
 
 ---
 
+## 🔌 Subpath imports
+
+```ts
+import { joinVoiceChannel } from '@sonata-sdk/voice'
+import { VoiceGateway } from '@sonata-sdk/voice/gateway'
+import { UdpSocket } from '@sonata-sdk/voice/udp'
+import { AudioEncryption } from '@sonata-sdk/voice/encryption'
+import type { VoiceConnection, EncryptionMode } from '@sonata-sdk/voice/types'
+```
+
+---
+
 ## 🚀 Usage
 
 ```ts

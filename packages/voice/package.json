@@ -10,6 +10,26 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./gateway": {
+      "import": "./dist/gateway.js",
+      "types": "./dist/gateway.d.ts"
+    },
+    "./udp": {
+      "import": "./dist/udp.js",
+      "types": "./dist/udp.d.ts"
+    },
+    "./encryption": {
+      "import": "./dist/encryption.js",
+      "types": "./dist/encryption.d.ts"
+    },
+    "./connection": {
+      "import": "./dist/connection.js",
+      "types": "./dist/connection.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
     }
   },
   "files": [
