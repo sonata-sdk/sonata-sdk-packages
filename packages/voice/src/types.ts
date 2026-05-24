@@ -11,6 +11,7 @@ export interface ConnectionState {
   status: 'connecting' | 'connected' | 'disconnected' | 'destroyed'
   reason: string | null
   code: number | null
+  closeReason?: string | null
 }
 
 export interface PlayerState {

@@ -71,7 +71,7 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
     })
 
     this.#gateway.on('close', (code, reason) => {
-      this.state = { status: 'disconnected', reason, code }
+      this.state = { status: 'disconnected', reason, code, closeReason: reason }
       this.emit('stateChange', { status: 'connected' }, this.state)
     })
 
@@ -92,6 +92,9 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
     this.#token = obj.token
     this.#endpoint = obj.endpoint
     this.#gateway.voiceServerUpdate(obj.token, obj.endpoint, obj.channelId ?? obj.channel_id)
+  }
+
+  connect() {
     this.#gateway.connect()
   }
 

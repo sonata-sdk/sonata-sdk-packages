@@ -1,6 +1,6 @@
 {
   "name": "@sonata-sdk/voice",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Discord voice connection library — WebSocket gateway, UDP, RTP, encryption, DAVE/MLS",
   "license": "MIT",
   "type": "module",
