@@ -1,11 +1,37 @@
 {
   "name": "@sonata-sdk/ws",
-  "version": "0.1.0",
-  "description": "Resumable WebSocket client with auto-reconnect, message queue, and strong typing",
+  "version": "0.2.1",
+  "description": "Zero-dependency WebSocket — client (auto-reconnect) + server (HTTP upgrade), no ws package",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./client": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server.js",
+      "types": "./dist/server.d.ts"
+    },
+    "./connection": {
+      "import": "./dist/connection.js",
+      "types": "./dist/connection.d.ts"
+    },
+    "./frame": {
+      "import": "./dist/frame.js",
+      "types": "./dist/frame.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
+  },
   "files": [
     "dist",
     "LICENSE",
