@@ -1,4 +1,4 @@
-import { randomBytes, createCipheriv, createDecipheriv } from 'node:crypto'
+import { randomBytes, createCipheriv } from 'node:crypto'
 import nacl from 'tweetnacl'
 import type { EncryptionMode } from './types.js'
 
@@ -6,11 +6,11 @@ const SILENCE_FRAME = Buffer.from([0xf8, 0xff, 0xfe])
 const VERSION = 0x80
 const TYPE = 0x78
 
-export interface EncryptedPacket {
-  header: Buffer
-  nonce: Buffer
-  encrypted: Buffer
-}
+export const OPUS_SAMPLE_RATE = 48000
+export const OPUS_FRAME_DURATION = 20
+export const TIMESTAMP_INCREMENT = 960
+export const OPUS_FRAME_SIZE = 960
+export const OPUS_SILENCE_FRAME = SILENCE_FRAME
 
 export class AudioEncryption {
   #mode: EncryptionMode
@@ -31,41 +31,61 @@ export class AudioEncryption {
   get timestamp() { return this.#timestamp }
   get ssrc() { return this.#ssrc }
 
+  reset(sequence?: number, timestamp?: number) {
+    this.#sequence = sequence ?? 0
+    this.#timestamp = timestamp ?? 0
+  }
+
   encrypt(frame: Buffer): Buffer | null {
     if (frame.equals(SILENCE_FRAME)) return null
 
     const header = this.#buildHeader()
     const seq = this.#sequence
-    const ts = this.#timestamp
 
     this.#sequence = (this.#sequence + 1) & 0xffff
-    this.#timestamp = (this.#timestamp + 960) >>> 0
-
-    const nonce = this.#makeNonce(seq)
+    this.#timestamp = (this.#timestamp + TIMESTAMP_INCREMENT) >>> 0
 
     let encrypted: Buffer
+    let suffix: Buffer
+
     switch (this.#mode) {
       case 'aead_aes256_gcm_rtpsize': {
+        const nonce = Buffer.alloc(12)
+        nonce.writeUInt32BE(seq, 0)
         encrypted = this.#encryptAes256Gcm(header, frame, nonce)
+        suffix = nonce.subarray(0, 4)
         break
       }
       case 'aead_xchacha20_poly1305_rtpsize': {
+        const nonce = Buffer.alloc(24)
+        nonce.writeUInt32BE(seq, 0)
+        this.#nonceBuffer.copy(nonce, 4, 0, 20)
         encrypted = this.#encryptXChaCha20(header, frame, nonce)
+        suffix = nonce.subarray(0, 24)
+        break
+      }
+      case 'xsalsa20_poly1305_suffix_rtpsize': {
+        const nonce = randomBytes(24)
+        encrypted = this.#encryptXsalsa20(header, frame, nonce)
+        suffix = nonce
+        break
+      }
+      case 'normal': {
+        const nonce = Buffer.alloc(24)
+        encrypted = this.#encryptXsalsa20(header, frame, nonce)
+        suffix = Buffer.alloc(0)
         break
       }
       default: {
+        const nonce = Buffer.alloc(24)
+        nonce.writeUInt32BE(seq, 0)
         encrypted = this.#encryptXsalsa20(header, frame, nonce)
+        suffix = nonce.subarray(0, 4)
         break
       }
     }
 
-    return Buffer.concat([header, encrypted, nonce.subarray(0, this.#nonceLen())])
-  }
-
-  #nonceLen(): number {
-    return this.#mode === 'aead_aes256_gcm_rtpsize' ? 4
-      : this.#mode === 'aead_xchacha20_poly1305_rtpsize' ? 24
-      : 4
+    return Buffer.concat([header, encrypted, suffix])
   }
 
   #buildHeader(): Buffer {
@@ -76,17 +96,6 @@ export class AudioEncryption {
     h.writeUInt32BE(this.#timestamp, 4)
     h.writeUInt32BE(this.#ssrc, 8)
     return h
-  }
-
-  #makeNonce(seq: number): Buffer {
-    const nonce = Buffer.alloc(this.#nonceBuffer.length)
-    if (this.#mode === 'aead_xchacha20_poly1305_rtpsize') {
-      nonce.writeUInt32BE(seq, 0)
-      this.#nonceBuffer.copy(nonce, 4, 0, 20)
-    } else {
-      nonce.writeUInt32BE(seq, 0)
-    }
-    return nonce
   }
 
   #encryptAes256Gcm(header: Buffer, frame: Buffer, nonce: Buffer): Buffer {
@@ -110,9 +119,7 @@ export class AudioEncryption {
   }
 
   #encryptXsalsa20(header: Buffer, frame: Buffer, nonce: Buffer): Buffer {
-    const fullNonce = Buffer.alloc(24)
-    nonce.copy(fullNonce)
-    const enc = nacl.secretbox(frame, fullNonce, this.#secretKey)
+    const enc = nacl.secretbox(frame, nonce, this.#secretKey)
     return Buffer.from(enc)
   }
 }

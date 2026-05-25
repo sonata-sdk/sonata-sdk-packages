@@ -1,8 +1,7 @@
-import { createSocket, type Socket, type RemoteInfo } from 'node:dgram'
+import { createSocket, type Socket } from 'node:dgram'
 import { EventEmitter } from 'node:events'
 
 const KEEPALIVE_INTERVAL = 10_000
-const IP_DISCOVERY_PACKET = Buffer.alloc(74)
 
 export class UdpSocket extends EventEmitter {
   #socket: Socket | null = null
@@ -43,12 +42,13 @@ export class UdpSocket extends EventEmitter {
 
   #discoverIp(ip: string, port: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      IP_DISCOVERY_PACKET.writeUInt16BE(1, 0)
-      IP_DISCOVERY_PACKET.writeUInt16BE(70, 2)
-      IP_DISCOVERY_PACKET.writeUInt32BE(this.#ssrc, 4)
+      const packet = Buffer.alloc(74)
+      packet.writeUInt16BE(1, 0)
+      packet.writeUInt16BE(70, 2)
+      packet.writeUInt32BE(this.#ssrc, 4)
 
       const timeout = setTimeout(() => reject(new Error('IP discovery timed out')), 5000)
-      this.#socket!.send(IP_DISCOVERY_PACKET, port, ip)
+      this.#socket!.send(packet, port, ip)
 
       this.once('ipDiscovery', (discIp: string, discPort: number) => {
         clearTimeout(timeout)

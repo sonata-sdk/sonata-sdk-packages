@@ -15,7 +15,7 @@ export interface ConnectionState {
 }
 
 export interface PlayerState {
-  status: 'playing' | 'paused' | 'stopped'
+  status: 'playing' | 'paused' | 'stopped' | 'idle'
   reason: string | null
 }
 
@@ -46,6 +46,10 @@ export interface VoiceConnection {
   voiceServerUpdate(obj: { token: string; endpoint: string; channel_id?: string; channelId?: string }): void
   sendAudioFrame(frame: Buffer): void
   setSpeaking(value: number): void
+  play(audioStream: any): any
+  stop(reason?: string): void
+  pause(reason?: string): void
+  unpause(reason?: string): void
   destroy(): void
   on(event: string | symbol, listener: (...args: any[]) => void): this
   removeAllListeners(event?: string | symbol): this
