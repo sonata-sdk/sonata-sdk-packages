@@ -1,59 +1,83 @@
-# @sonata-sdk/decoder
+<div align="center">
+  <h1>🧩 @sonata-sdk/decoder</h1>
+  <p><strong>Zero-dependency audio decoders for Node.js</strong><br />MP3 · FLAC · AAC (bundled FAAD2 WASM)</p>
+  <p>
+    <img src="https://img.shields.io/npm/v/@sonata-sdk/decoder?color=blueviolet" alt="Version" />
+    <img src="https://img.shields.io/npm/l/@sonata-sdk/decoder?color=blue" alt="License" />
+    <img src="https://img.shields.io/npm/dt/@sonata-sdk/decoder?color=green" alt="Downloads" />
+    <img src="https://img.shields.io/badge/node-20%2B-339933?logo=node.js" alt="Node" />
+  </p>
+  <p>
+    <a href="#-install">Install</a> •
+    <a href="#-usage">Usage</a> •
+    <a href="#-whats-inside">What's inside</a> •
+    <a href="#-related">Related</a>
+  </p>
+  <br />
+  <hr />
+</div>
 
-Pure-WASM audio decoders (MP3, FLAC) for Node.js — no native dependencies.
+> Pure TypeScript audio decoders. No native addons, no FFmpeg, no external WASM wrappers. MP3 and FLAC use pure-JS decoders, AAC uses a bundled FAAD2 WASM compiled from source.
 
-## Install
+---
 
-```sh
+## 📥 Install
+
+```bash
 npm install @sonata-sdk/decoder
 ```
 
-## Usage
+---
+
+## 🚀 Usage
 
 ```ts
-import { createMP3Decoder, createFLACDecoder, detectFormat } from '@sonata-sdk/decoder'
-import { readFileSync } from 'node:fs'
+import { detectFormat, createDecoder } from '@sonata-sdk/decoder'
+import { readFileSync } from 'fs'
 
-const buf = readFileSync('track.mp3')
+const data = readFileSync('song.mp4')
+const fmt = detectFormat(data) // 'mp3' | 'flac' | 'aac' | null
 
-// Detect format from magic bytes
-const fmt = detectFormat(new Uint8Array(buf))
-console.log(fmt) // 'mp3' | 'flac' | null
+const decoder = await createDecoder(fmt!)
+const { channelData, sampleRate } = await decoder.decode(data)
 
-// Decode full file
-import { decodeMP3 } from '@sonata-sdk/decoder/mp3'
-const { channelData, sampleRate } = await decodeMP3(new Uint8Array(buf))
-
-// Stream with decoder instance
-const decoder = await createMP3Decoder()
-for await (const chunk of someStream) {
-  const result = await decoder.decodeFrame(chunk)
-  // result.channelData: Float32Array[]
-  // result.samplesDecoded: number
-}
-decoder.free()
+// channelData[0] = Float32Array left channel
+// channelData[1] = Float32Array right channel
 ```
 
-## API
+### Subpath imports
 
-### `@sonata-sdk/decoder`
-| Export | Description |
-|---|---|
-| `detectFormat(data)` | Detect `'mp3'` / `'flac'` / `null` from magic bytes |
-| `createDecoder(format)` | Create decoder by format name |
+```ts
+import { createAACDecoder } from '@sonata-sdk/decoder/aac'
+import { createMP3Decoder } from '@sonata-sdk/decoder/mp3'
+import { createFLACDecoder } from '@sonata-sdk/decoder/flac'
+```
 
-### `@sonata-sdk/decoder/mp3`
-| Export | Description |
-|---|---|
-| `createMP3Decoder()` | Create streaming MP3 decoder instance |
-| `decodeMP3(src)` | Decode full MP3 buffer in one call |
+---
 
-### `@sonata-sdk/decoder/flac`
-| Export | Description |
-|---|---|
-| `createFLACDecoder()` | Create streaming FLAC decoder instance |
-| `decodeFLAC(src)` | Decode full FLAC buffer in one call |
+## 📦 What's inside
 
-## License
+| Format | Decoder | Size |
+|--------|---------|------|
+| **MP3** | `@audio/decode-mp3` (pure JS) | — |
+| **FLAC** | `@audio/decode-flac` (pure JS) | — |
+| **AAC** | Bundled FAAD2 WASM (compiled from source) | ~276 KB |
 
-MIT
+AAC is decoded with our own FAAD2 WASM binary, compiled from the [official FAAD2 source](https://github.com/knik0/faad2) with Emscripten 3.1.56. No `@ecliptia/faad2-wasm`, no `mp4box`, no FFmpeg.
+
+The WASM uses a handle-based API so multiple decoders can run concurrently on the same instance.
+
+---
+
+## 📦 Related
+
+- [**Sonata**](https://github.com/sonata-sdk/sonata) — Lavalink-compatible audio server
+- [**@sonata-sdk/voice**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/voice) — Discord voice connection
+- [**@sonata-sdk/ws**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/ws) — Resumable WebSocket client
+- [**sonata-sdk-packages**](https://github.com/sonata-sdk/sonata-sdk-packages) — Monorepo
+
+---
+
+<div align="center">
+  <sub>MIT License · Built with ❤️</sub>
+</div>

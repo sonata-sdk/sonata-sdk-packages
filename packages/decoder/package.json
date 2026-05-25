@@ -1,7 +1,7 @@
 {
   "name": "@sonata-sdk/decoder",
-  "version": "0.1.0",
-  "description": "Pure-WASM audio decoders (MP3, FLAC) for Node.js — no native dependencies",
+  "version": "0.3.1",
+  "description": "Audio decoders (MP3, FLAC, AAC) for Node.js — no native dependencies, no WASM wrappers",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,10 +18,15 @@
     "./flac": {
       "import": "./dist/flac.js",
       "types": "./dist/flac.d.ts"
+    },
+    "./aac": {
+      "import": "./dist/aac.js",
+      "types": "./dist/aac.d.ts"
     }
   },
   "files": [
     "dist",
+    "wasm",
     "LICENSE",
     "README.md"
   ],
@@ -30,8 +35,8 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@audio/decode-mp3": "^1.0.0",
-    "@audio/decode-flac": "^1.0.0"
+    "@audio/decode-flac": "^1.0.0",
+    "@audio/decode-mp3": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

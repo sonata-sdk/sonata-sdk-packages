@@ -1,0 +1,28 @@
+{
+  "name": "@sonata-sdk/ws",
+  "version": "0.1.0",
+  "description": "Resumable WebSocket client with auto-reconnect, message queue, and strong typing",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "websocket",
+    "reconnect",
+    "resumable",
+    "sonata"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "typescript": "^6.0.3"
+  }
+}
