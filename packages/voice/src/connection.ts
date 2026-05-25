@@ -45,6 +45,7 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
   #daveReady = false
 
   #audioStream: Readable | null = null
+  #opusQueue: Buffer[] = []
   #playTimeout: ReturnType<typeof setTimeout> | null = null
   #challengeTimeout: ReturnType<typeof setTimeout> | null = null
   #player: { sequence: number; timestamp: number; nextPacket: number; lastPacketTime: number | null }
@@ -70,12 +71,11 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
 
   #setupListeners() {
     this.#gateway.on('ready', (payload) => {
-      this.#udp.connect(payload.ssrc, payload.ip, payload.port).then(() => {
-        this.#gateway.sendSelectProtocol(
-          this.#udp.ip, this.#udp.port,
-          this.encryption ?? 'aead_aes256_gcm_rtpsize'
-        )
-      }).catch((err) => this.emit('error', err))
+      this.#udp.connect(payload.ssrc, payload.ip, payload.port).catch(() => {})
+      this.#gateway.sendSelectProtocol(
+        payload.ip, payload.port,
+        this.encryption ?? 'aead_aes256_gcm_rtpsize'
+      )
     })
 
     this.#gateway.on('sessionDescription', (payload) => {
@@ -142,27 +142,85 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
       }
     })
 
-    this.#gateway.on('dave_commit', (data: Buffer) => {
+    this.#gateway.on('dave_commit', ({ transitionId, commitData }: { transitionId: number; commitData: Buffer }) => {
       const session = (this.#gateway as any).daveSession
       if (!session) return this.emit('error', new Error('No DAVE session'))
       try {
-        session.processCommit(data)
+        session.processCommit(commitData)
+        this.emit('debug', `DAVE commit processed: ready=${session.ready} status=${session.status}`)
         if (session.ready) this.#daveReady = true
+        if (transitionId !== 0) {
+          this.#gateway.sendOp(23, { transition_id: transitionId })
+        }
       } catch (e) {
         this.emit('error', new Error(`DAVE commit: ${(e as Error).message}`))
+        this.#gateway.sendOp(31, { transition_id: transitionId })
       }
     })
 
-    this.#gateway.on('dave_welcome', (data: Buffer) => {
+    this.#gateway.on('dave_welcome', ({ transitionId, welcomeData }: { transitionId: number; welcomeData: Buffer }) => {
       const session = (this.#gateway as any).daveSession
       if (!session) return this.emit('error', new Error('No DAVE session'))
       try {
-        session.processWelcome(data)
+        session.processWelcome(welcomeData)
+        this.emit('debug', `DAVE welcome processed: ready=${session.ready} status=${session.status}`)
         if (session.ready) this.#daveReady = true
+        if (transitionId !== 0) {
+          this.#gateway.sendOp(23, { transition_id: transitionId })
+        }
       } catch (e) {
         this.emit('error', new Error(`DAVE welcome: ${(e as Error).message}`))
+        this.#gateway.sendOp(31, { transition_id: transitionId })
       }
     })
+
+    this.#gateway.on('dave_prepare_transition', (d: any) => {
+      this.emit('debug', `DAVE prepare transition id=${d.transition_id} version=${d.protocol_version}`)
+      this.#davePendingTransitions.set(d.transition_id, d.protocol_version)
+      if (d.transition_id === 0) {
+        this.#executeTransition(d.transition_id)
+      } else {
+        if (d.protocol_version === 0) {
+          const daveSession = (this.#gateway as any).daveSession
+          daveSession?.setPassthroughMode(true, 120)
+        }
+        this.#gateway.sendOp(23, { transition_id: d.transition_id })
+      }
+    })
+
+    this.#gateway.on('dave_execute_transition', (d: any) => {
+      this.emit('debug', `DAVE execute transition id=${d.transition_id}`)
+      this.#executeTransition(d.transition_id)
+    })
+
+    this.#gateway.on('dave_prepare_epoch', (d: any) => {
+      this.emit('debug', `DAVE prepare epoch id=${d.epoch}`)
+      if (d.epoch === 1) {
+        this.#gateway.daveProtocolVersion = d.protocol_version
+      }
+    })
+  }
+
+  #davePendingTransitions: Map<number, number> = new Map()
+  #daveDowngraded = false
+
+  #executeTransition(transitionId: number) {
+    if (!this.#davePendingTransitions.has(transitionId)) {
+      this.emit('warn', `Received execute transition, but no pending transition for ${transitionId}`)
+      return
+    }
+    const oldVersion = this.#gateway.daveProtocolVersion
+    this.#gateway.daveProtocolVersion = this.#davePendingTransitions.get(transitionId)!
+    if (oldVersion !== this.#gateway.daveProtocolVersion && this.#gateway.daveProtocolVersion === 0) {
+      this.#daveDowngraded = true
+      this.emit('debug', 'DAVE protocol downgraded')
+    } else if (transitionId > 0 && this.#daveDowngraded) {
+      this.#daveDowngraded = false
+      const daveSession = (this.#gateway as any).daveSession
+      daveSession?.setPassthroughMode(true, 10)
+      this.emit('debug', 'DAVE protocol upgraded')
+    }
+    this.#davePendingTransitions.delete(transitionId)
   }
 
   voiceStateUpdate(obj: { session_id?: string; sessionId?: string }) {
@@ -267,21 +325,32 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
     if (this.#destroyed) return
 
     let payload: Buffer = frame
-    const daveSession = (this.#gateway as any).daveSession as { ready: boolean; encryptOpus: (f: Buffer) => Buffer } | null
+    const daveSession = (this.#gateway as any).daveSession as { ready: boolean; status: number; encryptOpus: (f: Buffer) => Buffer } | null
     if (this.#daveReady && daveSession?.ready) {
       payload = daveSession.encryptOpus(frame)
     }
 
     if (this.#encryption) {
       const encrypted = this.#encryption.encrypt(payload)
-      if (!encrypted) return
+      if (!encrypted) {
+        this.emit('debug', 'sendAudioFrame: encrypt returned null (silence frame)')
+        return
+      }
+      this.emit('debug', `sendAudioFrame: sending ${encrypted.length}B frame daveReady=${this.#daveReady} daveOk=${!!daveSession?.ready} seq=${this.#encryption.sequence}`)
       this.#udp.send(encrypted)
     } else {
+      this.emit('error', new Error('sendAudioFrame: no encryption'))
       this.#udp.send(payload)
     }
 
     this.statistics.packetsSent++
     this.statistics.packetsExpected++
+  }
+
+  get queuedOpusFrameCount() { return this.#opusQueue.length }
+
+  enqueueOpusFrame(frame: Buffer) {
+    this.#opusQueue.push(frame)
   }
 
   setSpeaking(value: number) {
@@ -300,7 +369,12 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
       this.#player.nextPacket = now
     }
 
-    const chunk = (this.#audioStream as any).read?.(OPUS_FRAME_SIZE)
+    let chunk: Buffer | null = null
+    if (this.#opusQueue.length > 0) {
+      chunk = this.#opusQueue.shift()!
+    } else {
+      chunk = (this.#audioStream as any).read?.(OPUS_FRAME_SIZE)
+    }
 
     if (chunk) {
       this.#clearChallengeTimeout()
@@ -316,7 +390,7 @@ export class VoiceConnection extends EventEmitter implements IVoiceConnection {
           this.#challengeTimeout = null
           this.emit('stuck')
           this.pause('stuck')
-        }, 2000)
+        }, 30000)
       }
     }
 

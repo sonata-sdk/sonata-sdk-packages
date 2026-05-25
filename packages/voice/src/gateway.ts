@@ -53,6 +53,7 @@ export class VoiceGateway extends EventEmitter {
   get modes() { return this.#modes }
   get secretKey() { return this.#secretKey }
   get daveProtocolVersion() { return this.#daveProtocolVersion }
+  set daveProtocolVersion(v: number) { this.#daveProtocolVersion = v }
 
   constructor(guildId: string, userId: string) {
     super()
@@ -145,21 +146,38 @@ export class VoiceGateway extends EventEmitter {
       case 25: // dave_mls_external_sender_package
         this.emit('dave_external_sender', payload)
         break
-      case 27: { // dave_mls_proposals
-        try {
-          const json = JSON.parse(payload.toString())
-          this.emit('dave_proposals', json)
-        } catch (e) {
-          this.emit('error', new Error(`DAVE proposals parse error: ${(e as Error).message}`))
+      case 27: { // dave_mls_proposals (binary: operationType 1 byte + proposals)
+        if (payload.length < 1) {
+          this.emit('error', new Error('DAVE proposals payload too short'))
+          break
         }
+        const operationType = payload.readUInt8(0)
+        const proposals = payload.subarray(1)
+        this.emit('dave_proposals', { operationType, proposals })
         break
       }
-      case 29: // dave_mls_announce_commit_transition
-        this.emit('dave_commit', payload)
+      case 29: { // dave_mls_announce_commit_transition
+        // [seq 2B][opcode 1B][transition_id 2B][commit_data]
+        if (payload.length < 2) {
+          this.emit('error', new Error('DAVE commit payload too short'))
+          break
+        }
+        const commitTransitionId = payload.readUInt16BE(0)
+        const commitData = payload.subarray(2)
+        this.emit('dave_commit', { transitionId: commitTransitionId, commitData })
         break
-      case 30: // dave_mls_welcome
-        this.emit('dave_welcome', payload)
+      }
+      case 30: { // dave_mls_welcome
+        // [seq 2B][opcode 1B][transition_id 2B][welcome_data]
+        if (payload.length < 2) {
+          this.emit('error', new Error('DAVE welcome payload too short'))
+          break
+        }
+        const welcomeTransitionId = payload.readUInt16BE(0)
+        const welcomeData = payload.subarray(2)
+        this.emit('dave_welcome', { transitionId: welcomeTransitionId, welcomeData })
         break
+      }
       default:
         this.emit('error', new Error(`Unknown DAVE binary op: ${op}`))
     }
@@ -201,6 +219,15 @@ export class VoiceGateway extends EventEmitter {
         this.emit('resumed')
         break
       }
+      case 21: // DAVE Prepare Transition
+        this.emit('dave_prepare_transition', d)
+        break
+      case 22: // DAVE Execute Transition
+        this.emit('dave_execute_transition', d)
+        break
+      case 24: // DAVE Prepare Epoch
+        this.emit('dave_prepare_epoch', d)
+        break
       case 25: { // DAVE MLS External Sender Package
         this.emit('dave_external_sender', Buffer.from(d))
         break
@@ -237,10 +264,14 @@ export class VoiceGateway extends EventEmitter {
     if (this.#heartbeatTimer) clearInterval(this.#heartbeatTimer)
   }
 
-  #sendOp(op: number, data: any) {
+  sendOp(op: number, data: any) {
     if (this.#ws?.readyState === WebSocket.OPEN) {
       this.#ws.send(JSON.stringify({ op, d: data }))
     }
+  }
+
+  #sendOp(op: number, data: any) {
+    this.sendOp(op, data)
   }
 
   sendBinary(data: Buffer) {
@@ -257,7 +288,10 @@ export class VoiceGateway extends EventEmitter {
   }
 
   sendDaveOp(op: number, data: Buffer) {
-    this.#sendOp(op, [...data])
+    const msg = Buffer.alloc(1 + data.length)
+    msg[0] = op
+    data.copy(msg, 1)
+    this.sendBinary(msg)
   }
 
   setSpeaking(value: number, delay = 0) {

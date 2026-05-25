@@ -24,9 +24,12 @@ export class UdpSocket extends EventEmitter {
     this.#socket.on('message', (msg) => this.#onMessage(msg))
     this.#socket.on('error', (err) => this.emit('error', err))
 
-    await this.#discoverIp(ip, port)
+    this.#ip = ip
+    this.#port = port
     this.#startKeepalive()
     this.#connected = true
+
+    this.#discoverIp(ip, port).then(() => {}).catch(() => {})
   }
 
   #onMessage(msg: Buffer) {
