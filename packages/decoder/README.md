@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🧩 @sonata-sdk/decoder</h1>
-  <p><strong>Zero-dependency audio decoders for Node.js</strong><br />MP3 · FLAC · AAC (bundled FAAD2 WASM)</p>
+  <p><strong>Zero-dependency pure-WASM audio decoders for Node.js</strong><br />MP3 · FLAC · AAC</p>
   <p>
     <img src="https://img.shields.io/npm/v/@sonata-sdk/decoder?color=blueviolet" alt="Version" />
     <img src="https://img.shields.io/npm/l/@sonata-sdk/decoder?color=blue" alt="License" />
@@ -17,7 +17,7 @@
   <hr />
 </div>
 
-> Pure TypeScript audio decoders. No native addons, no FFmpeg, no external WASM wrappers. MP3 and FLAC use pure-JS decoders, AAC uses a bundled FAAD2 WASM compiled from source.
+> Pure-WASM audio decoders. No native addons, no FFmpeg, no external JS dependencies. Every decoder is a hand-compiled C library → WASM using Emscripten.
 
 ---
 
@@ -32,17 +32,31 @@ npm install @sonata-sdk/decoder
 ## 🚀 Usage
 
 ```ts
-import { detectFormat, createDecoder } from '@sonata-sdk/decoder'
+import { detectFormat, decodeMP3, decodeFLAC } from '@sonata-sdk/decoder'
 import { readFileSync } from 'fs'
 
-const data = readFileSync('song.mp4')
+const data = readFileSync('song.mp3')
 const fmt = detectFormat(data) // 'mp3' | 'flac' | 'aac' | null
 
-const decoder = await createDecoder(fmt!)
-const { channelData, sampleRate } = await decoder.decode(data)
+const { channelData, sampleRate, samplesDecoded } = fmt === 'mp3'
+  ? await decodeMP3(data)
+  : await decodeFLAC(data)
 
-// channelData[0] = Float32Array left channel
-// channelData[1] = Float32Array right channel
+// channelData[0] = Float32Array left
+// channelData[1] = Float32Array right
+```
+
+### Streaming
+
+```ts
+import { createMP3Decoder } from '@sonata-sdk/decoder'
+
+const decoder = await createMP3Decoder()
+for (const chunk of chunks) {
+  const { channelData, sampleRate } = await decoder.decode(chunk)
+  // process float PCM...
+}
+decoder.free()
 ```
 
 ### Subpath imports
@@ -57,15 +71,15 @@ import { createFLACDecoder } from '@sonata-sdk/decoder/flac'
 
 ## 📦 What's inside
 
-| Format | Decoder | Size |
-|--------|---------|------|
-| **MP3** | `@audio/decode-mp3` (pure JS) | — |
-| **FLAC** | `@audio/decode-flac` (pure JS) | — |
-| **AAC** | Bundled FAAD2 WASM (compiled from source) | ~276 KB |
+| Format | Decoder | WASM size |
+|--------|---------|-----------|
+| **MP3** | mpg123 1.32.5 compiled to WASM | ~235 KB |
+| **FLAC** | libFLAC 1.4.3 compiled to WASM | ~59 KB |
+| **AAC** | FAAD2 compiled to WASM | ~276 KB |
 
-AAC is decoded with our own FAAD2 WASM binary, compiled from the [official FAAD2 source](https://github.com/knik0/faad2) with Emscripten 3.1.56. No `@ecliptia/faad2-wasm`, no `mp4box`, no FFmpeg.
+All WASM binaries are compiled from source with Emscripten 3.1.56 and bundled in the package. Zero runtime dependencies — no `@audio/decode-*`, no `mpg123-decoder`, no `@wasm-audio-decoders/`.
 
-The WASM uses a handle-based API so multiple decoders can run concurrently on the same instance.
+The WASM uses a handle-based API so multiple decoders can run concurrently.
 
 ---
 

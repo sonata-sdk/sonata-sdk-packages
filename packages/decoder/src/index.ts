@@ -5,31 +5,27 @@ import { createAACDecoder, decodeAAC, type AACDecoder } from './aac.js'
 export type AudioDecoder = MP3Decoder | FLACDecoder | AACDecoder
 export type AudioFormat = 'mp3' | 'flac' | 'aac'
 
-const MP3_MAGIC = 0xffe0
-const FLAC_MAGIC = 0x664c6143 // "fLaC" as big-endian u32
+const MP3_SYNC = 0xffe0
+const FLAC_MAGIC = 0x664c6143
 
 export function detectFormat(data: Uint8Array): AudioFormat | null {
   if (data.length < 4) return null
-
-  const view = new DataView(data.buffer, data.byteOffset, 4)
-  const u32 = view.getUint32(0, false)
-
-  if (u32 === FLAC_MAGIC) return 'flac'
-
-  const sync = view.getUint16(0, false)
-  if ((sync & MP3_MAGIC) === MP3_MAGIC) return 'mp3'
-
-  // Check for ADTS AAC (syncword 0xFFF)
-  if (data.length >= 2 && (data[0] & 0xff) === 0xff && (data[1] & 0xf0) === 0xf0) {
-    return 'aac'
+  // Skip ID3 tags
+  let off = 0
+  if (data[0] === 0x49 && data[1] === 0x44 && data[2] === 0x33) {
+    const size = ((data[6] & 0x7f) << 21) | ((data[7] & 0x7f) << 14) | ((data[8] & 0x7f) << 7) | (data[9] & 0x7f)
+    off = size + 10
   }
-
-  // Check for MP4 container with AAC (ftyp box)
+  if (off + 4 > data.length) return null
+  const view = new DataView(data.buffer, data.byteOffset + off, 4)
+  const u32 = view.getUint32(0, false)
+  if (u32 === FLAC_MAGIC) return 'flac'
+  if ((view.getUint16(0, false) & MP3_SYNC) === MP3_SYNC) return 'mp3'
+  if (data.length >= 2 && (data[0] & 0xff) === 0xff && (data[1] & 0xf0) === 0xf0) return 'aac'
   if (data.length >= 8) {
     const type = String.fromCharCode(data[4], data[5], data[6], data[7])
     if (type === 'ftyp' || type === 'moov') return 'aac'
   }
-
   return null
 }
 
