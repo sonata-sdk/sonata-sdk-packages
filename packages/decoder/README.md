@@ -6,6 +6,7 @@
     <img src="https://img.shields.io/npm/l/@sonata-sdk/decoder?color=blue" alt="License" />
     <img src="https://img.shields.io/npm/dt/@sonata-sdk/decoder?color=green" alt="Downloads" />
     <img src="https://img.shields.io/badge/node-20%2B-339933?logo=node.js" alt="Node" />
+    <img src="https://img.shields.io/badge/docs-sonata.enerthya.website-818cf8?style=flat-square" alt="Docs" />
   </p>
   <p>
     <a href="#-install">Install</a> •
@@ -89,6 +90,7 @@ The WASM uses a handle-based API so multiple decoders can run concurrently.
 - [**@sonata-sdk/voice**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/voice) — Discord voice connection
 - [**@sonata-sdk/ws**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/ws) — Resumable WebSocket client
 - [**sonata-sdk-packages**](https://github.com/sonata-sdk/sonata-sdk-packages) — Monorepo
+- [**Docs**](https://sonata.enerthya.website) — Package documentation
 
 ---
 

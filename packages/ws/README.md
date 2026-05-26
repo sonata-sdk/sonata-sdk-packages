@@ -6,6 +6,7 @@
     <img src="https://img.shields.io/npm/l/@sonata-sdk/ws?color=blue" alt="License" />
     <img src="https://img.shields.io/npm/dt/@sonata-sdk/ws?color=green" alt="Downloads" />
     <img src="https://img.shields.io/badge/node-20%2B-339933?logo=node.js" alt="Node" />
+    <img src="https://img.shields.io/badge/docs-sonata.enerthya.website-818cf8?style=flat-square" alt="Docs" />
   </p>
   <p>
     <a href="#-features">Features</a> •
@@ -190,6 +191,7 @@ import type { WSEventMap } from '@sonata-sdk/ws/types'
 - [**@sonata-sdk/decoder**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/decoder) — Audio decoders (MP3, FLAC, AAC)
 - [**@sonata-sdk/voice**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/voice) — Discord voice connection
 - [**sonata-sdk-packages**](https://github.com/sonata-sdk/sonata-sdk-packages) — Monorepo
+- [**Docs**](https://sonata.enerthya.website) — Package documentation
 
 ---
 

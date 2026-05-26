@@ -5,6 +5,7 @@
     <img src="https://img.shields.io/npm/v/@sonata-sdk/voice?color=blueviolet" alt="Version" />
     <img src="https://img.shields.io/npm/l/@sonata-sdk/voice?color=blue" alt="License" />
     <img src="https://img.shields.io/badge/node-20%2B-339933?logo=node.js" alt="Node" />
+    <img src="https://img.shields.io/badge/docs-sonata.enerthya.website-818cf8?style=flat-square" alt="Docs" />
   </p>
   <p>
     <a href="#-install">Install</a> •
@@ -136,6 +137,7 @@ Returns a `VoiceConnection`.
 - [**Sonata**](https://github.com/sonata-sdk/sonata) — Lavalink-compatible audio server
 - [**@sonata-sdk/plugin-sdk**](https://github.com/sonata-sdk/sonata-sdk-packages/tree/main/packages/plugin-sdk) — SDK for Sonata plugins
 - [**sonata-sdk-packages**](https://github.com/sonata-sdk/sonata-sdk-packages) — Monorepo
+- [**Docs**](https://sonata.enerthya.website) — Package documentation
 
 ---
 

@@ -7,6 +7,7 @@
     <img src="https://img.shields.io/npm/dt/@sonata-sdk/plugin-sdk?color=green" alt="Downloads" />
     <img src="https://img.shields.io/bundlephobia/min/@sonata-sdk/plugin-sdk?color=orange" alt="Size" />
     <img src="https://img.shields.io/badge/node-20%2B-339933?logo=node.js" alt="Node" />
+    <img src="https://img.shields.io/badge/docs-sonata.enerthya.website-818cf8?style=flat-square" alt="Docs" />
   </p>
   <p>
     <a href="#-install">Install</a> •
@@ -256,6 +257,7 @@ export default new (class extends SonataPlugin {
 
 - [**Sonata**](https://github.com/sonata-sdk/sonata) — Lavalink-compatible audio server
 - [**sonata-sdk-packages**](https://github.com/sonata-sdk/sonata-sdk-packages) — Monorepo for all official packages
+- [**Docs**](https://sonata.enerthya.website) — Package documentation
 
 ---
 
