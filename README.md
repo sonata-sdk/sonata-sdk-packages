@@ -26,6 +26,7 @@
 
 | Package | Version | Description |
 |---------|---------|-------------|
+| [**server**](https://github.com/sonata-sdk/sonata) | [![npm](https://img.shields.io/npm/v/@sonata-sdk/server)](https://npmjs.com/package/@sonata-sdk/server) | Lavalink-compatible audio server (binary: `sonata`) |
 | [**plugin-sdk**](./packages/plugin-sdk) | [![npm](https://img.shields.io/npm/v/@sonata-sdk/plugin-sdk)](https://npmjs.com/package/@sonata-sdk/plugin-sdk) | Types, `register()` helper, and base class for creating Sonata plugins |
 | [**voice**](./packages/voice) | [![npm](https://img.shields.io/npm/v/@sonata-sdk/voice)](https://npmjs.com/package/@sonata-sdk/voice) | Discord voice connection — WebSocket gateway, UDP, RTP, encryption, DAVE/MLS |
 | [**decoder**](./packages/decoder) | [![npm](https://img.shields.io/npm/v/@sonata-sdk/decoder)](https://npmjs.com/package/@sonata-sdk/decoder) | Audio decoders — MP3, FLAC, AAC with bundled FAAD2 WASM |
